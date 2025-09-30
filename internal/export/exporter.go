@@ -11,7 +11,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/ca-srg/kiberag/export/internal/kibela"
+	"github.com/ca-srg/kiberamd/internal/kibela"
 )
 
 // CategoryNotFoundError represents an error when category cannot be determined for a note

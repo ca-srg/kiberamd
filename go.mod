@@ -1,4 +1,4 @@
-module github.com/ca-srg/kiberag/export
+module github.com/ca-srg/kiberamd
 
 go 1.22.5
 

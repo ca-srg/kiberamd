@@ -10,7 +10,7 @@ Kibela GraphQL APIを使用してすべてのノートをmarkdownファイルと
 ## インストール
 
 ```bash
-go build -o kiberag-export
+go install github.com/ca-srg/kiberamd@latest
 ```
 
 ## 使用方法
@@ -21,7 +21,7 @@ export KIBELA_TOKEN="your_token"
 export KIBELA_TEAM="your_team"
 
 # 実行
-./kiberag-export
+kiberamd
 ```
 
 エクスポートされたファイルは `markdown/` ディレクトリに保存されます。

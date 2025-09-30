@@ -1,0 +1,4 @@
+.env
+markdown/*.md
+kiberamd
+.spec-workflow

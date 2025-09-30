@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ca-srg/kiberag/export/internal/config"
-	"github.com/ca-srg/kiberag/export/internal/export"
-	"github.com/ca-srg/kiberag/export/internal/kibela"
+	"github.com/ca-srg/kiberamd/internal/config"
+	"github.com/ca-srg/kiberamd/internal/export"
+	"github.com/ca-srg/kiberamd/internal/kibela"
 	"github.com/spf13/cobra"
 )
 
