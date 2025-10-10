@@ -215,7 +215,9 @@ func (e *Exporter) convertToMarkdown(note kibela.Note) (string, error) {
 		category = e.extractCategoryFromFolderPath(note.Folders.Nodes[0].FullName)
 		fmt.Printf("Debug: Extracted category='%s' from path='%s'\n", category, note.Folders.Nodes[0].FullName)
 	} else {
-		fmt.Printf("Debug: No folders found for note\n")
+		// フォルダ未設定ノートは個人メモとして扱う
+		category = "個人メモ"
+		fmt.Printf("Debug: No folders found; default category='%s'\n", category)
 	}
 
 	// カテゴリが取得できない場合は専用エラーで処理停止
