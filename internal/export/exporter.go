@@ -148,12 +148,25 @@ func (e *Exporter) extractCategoryFromFolderPath(folderPath string) string {
 		return ""
 	}
 
-	// パスを "/" で分割
-	parts := strings.Split(folderPath, "/")
+	// パスを "/" で分割し、空文字や前後の空白を取り除く
+	rawParts := strings.Split(folderPath, "/")
+	parts := make([]string, 0, len(rawParts))
+	for _, part := range rawParts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed == "" {
+			continue
+		}
+		parts = append(parts, trimmed)
+	}
 	fmt.Printf("Debug: Split parts: %v (length: %d)\n", parts, len(parts))
 
+	if len(parts) == 0 {
+		fmt.Printf("Debug: No usable folder segments after trimming, returning empty\n")
+		return ""
+	}
+
 	// 第1階層が「個人メモ」「日報」などの意味のあるカテゴリの場合のみ使用
-	if len(parts) >= 1 && parts[0] != "" {
+	if len(parts) >= 1 {
 		firstLevel := parts[0]
 		priorityCategories := []string{"個人メモ", "日報", "手順", "データ", "技術", "会議", "企画", "プロジェクト"}
 		for _, priority := range priorityCategories {
@@ -165,7 +178,7 @@ func (e *Exporter) extractCategoryFromFolderPath(folderPath string) string {
 	}
 
 	// 特定のフォルダを専用カテゴリにマッピング
-	if len(parts) >= 1 && parts[0] != "" {
+	if len(parts) >= 1 {
 		firstLevel := parts[0]
 		categoryMapping := map[string]string{
 			"施策仕様書": "仕様書",
@@ -176,11 +189,54 @@ func (e *Exporter) extractCategoryFromFolderPath(folderPath string) string {
 		}
 	}
 
-	// 第3階層（インデックス2）が存在する場合のみ使用
-	if len(parts) >= 3 && parts[2] != "" {
-		category := parts[2]
-		fmt.Printf("Debug: Found category at index 2: '%s'\n", category)
-		return category
+	const preferredIndex = 2
+	if len(parts) > preferredIndex {
+		candidate := parts[preferredIndex]
+		if candidate != "" && candidate != "メンバー" {
+			fmt.Printf("Debug: Found category at index %d: '%s'\n", preferredIndex, candidate)
+			return candidate
+		}
+		if candidate == "メンバー" {
+			fmt.Printf("Debug: Skipping category 'メンバー' at index %d\n", preferredIndex)
+		}
+	}
+
+	for i := preferredIndex - 1; i >= 0; i-- {
+		if i >= len(parts) {
+			continue
+		}
+		candidate := parts[i]
+		if candidate == "" {
+			continue
+		}
+		if candidate == "メンバー" {
+			fmt.Printf("Debug: Skipping category 'メンバー' at index %d during upward fallback\n", i)
+			continue
+		}
+		fmt.Printf("Debug: Fallback category at index %d: '%s'\n", i, candidate)
+		return candidate
+	}
+
+	for i := preferredIndex + 1; i < len(parts); i++ {
+		candidate := parts[i]
+		if candidate == "" {
+			continue
+		}
+		if candidate == "メンバー" {
+			fmt.Printf("Debug: Skipping category 'メンバー' at index %d during downward fallback\n", i)
+			continue
+		}
+		fmt.Printf("Debug: Fallback category at index %d: '%s'\n", i, candidate)
+		return candidate
+	}
+
+	// 最後の手段として、最初に見つけた有効なパーツを使用
+	for i, candidate := range parts {
+		if candidate == "" || candidate == "メンバー" {
+			continue
+		}
+		fmt.Printf("Debug: Using first available category at index %d: '%s'\n", i, candidate)
+		return candidate
 	}
 
 	fmt.Printf("Debug: No valid category found, returning empty\n")
