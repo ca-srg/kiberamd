@@ -22,9 +22,19 @@ export KIBELA_TEAM="your_team"
 
 # 実行
 kiberamd
+
+# 出力先ディレクトリを指定
+kiberamd --output ./output
+kiberamd -o /path/to/export
 ```
 
-エクスポートされたファイルは `markdown/` ディレクトリに保存されます。
+## オプション
+
+| フラグ | 短縮形 | デフォルト | 説明 |
+|-------|--------|-----------|------|
+| `--output` | `-o` | `markdown` | 出力先ディレクトリ |
+
+エクスポートされたファイルはデフォルトで `markdown/` ディレクトリに保存されます。
 
 ## ファイル名形式
 

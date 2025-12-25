@@ -10,11 +10,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var outputDir string
+
 var rootCmd = &cobra.Command{
 	Use:   "kiberag-export",
 	Short: "Export all notes from Kibela to markdown files",
 	Long:  `Export all notes from Kibela using GraphQL API and save them as markdown files.`,
 	RunE:  runExport,
+}
+
+func init() {
+	rootCmd.Flags().StringVarP(&outputDir, "output", "o", "markdown", "output directory for markdown files")
 }
 
 func runExport(cmd *cobra.Command, args []string) error {
@@ -25,15 +31,15 @@ func runExport(cmd *cobra.Command, args []string) error {
 
 	client := kibela.NewClient(cfg.KibelaTeam, cfg.KibelaToken)
 
-	if err := os.MkdirAll("markdown", 0755); err != nil {
-		return fmt.Errorf("failed to create markdown directory: %w", err)
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		return fmt.Errorf("failed to create output directory: %w", err)
 	}
 
 	exporter := export.New(client)
 
-	fmt.Println("Starting export of all Kibela notes...")
+	fmt.Printf("Starting export of all Kibela notes to '%s'...\n", outputDir)
 
-	err = exporter.ExportAllNotes("markdown")
+	err = exporter.ExportAllNotes(outputDir)
 	if err != nil {
 		return fmt.Errorf("failed to export notes: %w", err)
 	}
