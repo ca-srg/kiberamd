@@ -38,39 +38,41 @@ func New(client *kibela.Client) *Exporter {
 func (e *Exporter) ExportAllNotes(outputDir string) error {
 	ctx := context.Background()
 
-	fmt.Println("Fetching all notes from Kibela...")
-	notes, err := e.client.GetAllNotes(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get notes: %w", err)
-	}
-
-	fmt.Printf("Found %d notes. Starting export...\n", len(notes))
+	fmt.Println("Fetching and exporting notes from Kibela...")
 
 	successCount := 0
 	skipCount := 0
+	totalProcessed := 0
 
-	for i, note := range notes {
-		err := e.saveNoteAsMarkdown(note, outputDir)
-		if err != nil {
-			var categoryErr CategoryNotFoundError
-			if errors.As(err, &categoryErr) {
-				// カテゴリ決定エラーの場合はスキップして継続
-				fmt.Printf("Warning: Skipping note '%s' - %v\n", note.Title, categoryErr)
-				skipCount++
+	err := e.client.ProcessNotesInBatches(ctx, func(notes []kibela.Note, totalCount int) error {
+		for _, note := range notes {
+			err := e.saveNoteAsMarkdown(note, outputDir)
+			if err != nil {
+				var categoryErr CategoryNotFoundError
+				if errors.As(err, &categoryErr) {
+					// カテゴリ決定エラーの場合はスキップして継続
+					fmt.Printf("Warning: Skipping note '%s' - %v\n", note.Title, categoryErr)
+					skipCount++
+				} else {
+					// その他のエラーの場合は処理停止
+					return fmt.Errorf("export stopped due to error for note %s: %w", note.Title, err)
+				}
 			} else {
-				// その他のエラーの場合は処理停止
-				return fmt.Errorf("export stopped due to error for note %s: %w", note.Title, err)
+				successCount++
 			}
-		} else {
-			successCount++
-		}
 
-		if (i+1)%10 == 0 {
-			fmt.Printf("Processed %d/%d notes (exported: %d, skipped: %d)...\n", i+1, len(notes), successCount, skipCount)
+			totalProcessed++
+			if totalProcessed%10 == 0 {
+				fmt.Printf("Processed %d/%d notes (exported: %d, skipped: %d)...\n", totalProcessed, totalCount, successCount, skipCount)
+			}
 		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to process notes: %w", err)
 	}
 
-	fmt.Printf("Export completed. Total: %d, Exported: %d, Skipped: %d\n", len(notes), successCount, skipCount)
+	fmt.Printf("Export completed. Total: %d, Exported: %d, Skipped: %d\n", totalProcessed, successCount, skipCount)
 	return nil
 }
 

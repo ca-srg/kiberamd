@@ -73,7 +73,7 @@ go doc github.com/machinebox/graphql
 1. `config.Load()` で環境変数を読み込み
 2. `kibela.NewClient()` でAPIクライアントを初期化
 3. `exporter.ExportAllNotes()` でエクスポート実行
-   - `client.GetAllNotes()` でページネーションしながら全ノートを取得
+   - `client.ProcessNotesInBatches()` でバッチ単位（100件ずつ）でノートを取得・処理（メモリ効率のためストリーミング処理）
    - 各ノートに対して `saveNoteAsMarkdown()` を実行
      - `generateFilename()` でファイル名を生成
      - `convertToMarkdown()` でmarkdownに変換

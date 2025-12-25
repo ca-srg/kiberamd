@@ -74,17 +74,19 @@ func (c *Client) GetNoteURL(note Note) string {
 	return note.URL
 }
 
-func (c *Client) GetAllNotes(ctx context.Context) ([]Note, error) {
-	var allNotes []Note
+func (c *Client) ProcessNotesInBatches(ctx context.Context, batchCallback func(notes []Note, totalCount int) error) error {
 	var cursor *string
 
 	for {
-		notes, pageInfo, err := c.fetchNotes(ctx, cursor)
+		notes, pageInfo, totalCount, err := c.fetchNotes(ctx, cursor)
 		if err != nil {
-			return nil, fmt.Errorf("failed to fetch notes: %w", err)
+			return fmt.Errorf("failed to fetch notes: %w", err)
 		}
 
-		allNotes = append(allNotes, notes...)
+		err = batchCallback(notes, totalCount)
+		if err != nil {
+			return err
+		}
 
 		if !pageInfo.HasNextPage {
 			break
@@ -92,10 +94,10 @@ func (c *Client) GetAllNotes(ctx context.Context) ([]Note, error) {
 		cursor = &pageInfo.EndCursor
 	}
 
-	return allNotes, nil
+	return nil
 }
 
-func (c *Client) fetchNotes(ctx context.Context, cursor *string) ([]Note, PageInfo, error) {
+func (c *Client) fetchNotes(ctx context.Context, cursor *string) ([]Note, PageInfo, int, error) {
 	query := `
 		query GetNotes($first: Int!, $after: String) {
 			notes(first: $first, after: $after, orderBy: {field: PUBLISHED_AT, direction: DESC}) {
@@ -138,7 +140,7 @@ func (c *Client) fetchNotes(ctx context.Context, cursor *string) ([]Note, PageIn
 	var resp NotesResponse
 	err := c.client.Run(ctx, req, &resp)
 	if err != nil {
-		return nil, PageInfo{}, fmt.Errorf("GraphQL query failed: %w", err)
+		return nil, PageInfo{}, 0, fmt.Errorf("GraphQL query failed: %w", err)
 	}
 
 	notes := make([]Note, len(resp.Notes.Edges))
@@ -146,5 +148,5 @@ func (c *Client) fetchNotes(ctx context.Context, cursor *string) ([]Note, PageIn
 		notes[i] = edge.Node
 	}
 
-	return notes, resp.Notes.PageInfo, nil
+	return notes, resp.Notes.PageInfo, resp.Notes.TotalCount, nil
 }
